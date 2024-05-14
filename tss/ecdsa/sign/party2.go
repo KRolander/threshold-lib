@@ -1,11 +1,29 @@
 package sign
 
+/*
+Extention for signing algorithms
+
+Author: Roland Kromes
+Contact: r.g.kromes@tudelft.nl
+Institution: TU Delft - REIT Team
+
+Author: Alin Roșu
+Contact: A.Rou@student.tudelft.nl
+Institution: TU Delft - Cyber Security Group
+
+Description:
+Extentions to allow deterministic usage of the elliptic curve digital signature algorithm following the RFC 6979 standard.
+New extentions : Step1_with_rfc6979(...)
+*/
+
 import (
 	"crypto/ecdsa"
+	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"math/big"
 
+	"github.com/decred/dcrd/dcrec/secp256k1/v2"
 	"github.com/okx/threshold-lib/crypto"
 	"github.com/okx/threshold-lib/crypto/commitment"
 	"github.com/okx/threshold-lib/crypto/curves"
@@ -51,6 +69,32 @@ func (p2 *P2Context) Step1(cmtC *commitment.Commitment) (*schnorr.Proof, *curves
 	// random generate k2, k=k1*k2
 	p2.k2 = crypto.RandomNum(curve.N)
 	R2 := curves.ScalarToPoint(curve, p2.k2)
+	proof, err := schnorr.ProveWithId(p2.sessionID, p2.k2, R2)
+	if err != nil {
+		return nil, nil, err
+	}
+	return proof, R2, nil
+}
+
+func (p2 *P2Context) Step1_with_rfc6979(x2 *big.Int, cmtC *commitment.Commitment) (*schnorr.Proof, *curves.ECPoint, error) {
+	p2.cmtC = cmtC
+
+	msg, _ := hex.DecodeString(p2.message)
+
+	h := sha256.Sum256(msg)
+
+	p2.k2 = secp256k1.NonceRFC6979(x2, h[:], nil, nil)
+
+	// fmt.Printf("From party1: k1 : %x\n", p1.k1)
+	// rfc6979.generateSecret(curve.N, x1, sha256.New(), h[:], func(k *big.Int) bool {
+	// 	p1.k1 = k
+	// 	return true
+	// })
+
+	// random generate k1, k=k1*k2
+	// p1.k1 = crypto.RandomNum(curve.N)
+	R2 := curves.ScalarToPoint(curve, p2.k2)
+
 	proof, err := schnorr.ProveWithId(p2.sessionID, p2.k2, R2)
 	if err != nil {
 		return nil, nil, err
