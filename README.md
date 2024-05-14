@@ -17,6 +17,13 @@ This library supports the following functions:
 See the [Threshold Signature Scheme](docs/Threshold_Signature_Scheme.md) for more detailed information about the
 library.
 
+
+## Extentions - new features
+Extentions to allow deterministic usage of the elliptic curve digital signature algorithm following the RFC 6979 standard.
+
+   - **Step1_with_rfc6979(...)**, deterministic signature
+   - **Step3_with_Recoveryid(...)**, returns r,s and the recovery id
+
 ## License
 
    [Apache-2.0 license](./LICENSE)
